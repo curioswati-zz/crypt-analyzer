@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block title %}Select Algorithm{% endblock %}
+
+{% block content %}
+<center>
+  <h1>Select Algorithm</h1>
+</center>
+
+<div class="row">
+  <div class="col-md-4"></div>
+  <div class="col-md-3">
+    <form id="select-algorithm-form" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <p>{{ form.non_field_errors }}</p>
+
+      {% for field in form %}
+        {% if field.errors %}
+          {{ field.errors }}
+        {% endif %}
+        <center>
+        <p>
+        <label class="algo-name">{{ field.label_tag }}</label>
+        <span class="algo-check" style="display: inline;">{{ field }}</span>
+        </p>
+    </center>
+      {% endfor %}
+      <span>Note: Select multiple to compare</span>
+
+      <br>
+      <br>
+      <p><input class="btn btn-block btn-success" type="submit" value="Submit" /></p>
+    </form>
+  </div>
+  <div class="col-md-5"></div>
+</div>
+
+{% endblock %}

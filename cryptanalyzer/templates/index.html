@@ -1,1 +1,42 @@
-Hello World
+{% extends "base.html" %}
+
+{% block title %}Cryptanalyzer{% endblock %}
+{% load staticfiles %}
+
+{% block home_link %}<li class="active">{% endblock %}
+
+{% block content %}
+<center>
+  <h1>Cryptanalyzer</h1>
+  <h3>Select type of Analysis</h3>
+</center>
+
+<div class="row">
+  <div class="col-md-6 analysis-type-card">
+    <span>
+      <a href="{% url 'base:encryption_data' %}">Encryption</a>
+    </span><br>
+    <span>Varying File Size</span>
+  </div>
+  <div class="col-md-6 analysis-type-card">
+    <span>
+      <a href="{% url 'base:encryption_key' %}">Encryption</a>
+    </span><br>
+    <span>Varying Key Size</span>
+  </div>
+
+<div class="row">
+  <div class="col-md-6 analysis-type-card">
+    <span>
+      <a href="{% url 'base:decryption_data' %}">Decryption</a>
+    </span><br>
+    <span>Varying File Size</span>
+  </div>
+  <div class="col-md-6 analysis-type-card">
+    <span>
+      <a href="{% url 'base:decryption_key' %}">Decryption</a>
+    </span><br>
+    <span>Varying Key Size</span>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block title %}Encryption Time Analyzer{% endblock %}
+
+{% block content %}
+<center>
+  <h1>Encryption Time Analyzer</h1>
+  <h3>Varying Data File Size</h3>
+</center>
+
+<div class="row">
+  <div class="col-md-3"></div>
+  <div class="col-md-6">
+    <h4>Select Files</h4>
+    <span>Note: You can select file types varying in (Audio, Video, Text and Images).</span>
+
+    <hr>
+    <form id="file-upload-form" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <p>{{ form.non_field_errors }}</p>
+      {% for field in form %}
+        <p style="display: inline;">{{ field.label_tag }}</p>
+        {% if field.errors %}
+          {{ field.errors }}
+        {% endif %}
+        <p class="btn btn-default">
+          {{ field }}
+        </p>
+        <br>
+        <br>
+      {% endfor %}
+      <p><input class="btn btn-success" type="submit" value="Upload" /></p>
+    </form>
+
+  </div>
+  <div class="col-md-3"></div>
+</div>
+
+{% endblock %}
