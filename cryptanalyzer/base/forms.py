@@ -16,9 +16,3 @@ class SelectAlgorithmForm(forms.Form):
                     ('rc6', 'RC6')]
     choice_field = forms.MultipleChoiceField(choices=algo_choices,
                                              widget=forms.CheckboxSelectMultiple)
-
-#    aes = forms.BooleanField(label="AES", required=False)
-#    des = forms.BooleanField(label="3DES", required=False)
-#    blowfish = forms.BooleanField(label="BlowFish", required=False)
-#    twofish = forms.BooleanField(label="TwoFish", required=False)
-#    rc6 = forms.BooleanField(label="RC6", required=False)

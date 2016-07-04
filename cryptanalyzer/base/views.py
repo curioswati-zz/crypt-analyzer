@@ -54,7 +54,8 @@ def SelectAlgorithm(request, type):
         return render(request, "select_algorithm.html", {'form': form})
 
     elif request.method == "POST":
+        key = request.POST['key']
         form = SelectAlgorithmForm(request.POST)
-        utils.encrypt(files, form['choice_field'].value())
+        utils.encrypt(key, files, form['choice_field'].value())
 
     return HttpResponseRedirect(reverse_lazy("base:index"))

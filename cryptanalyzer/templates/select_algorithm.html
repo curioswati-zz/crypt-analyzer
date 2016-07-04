@@ -4,36 +4,46 @@
 {% block title %}Select Algorithm{% endblock %}
 
 {% block content %}
-<center>
-  <h1>Select Algorithm</h1>
-</center>
 
 <div class="row">
   <div class="col-md-4"></div>
-  <div class="col-md-3">
+
+  <div class="col-md-4">
     <form id="select-algorithm-form" method="post" enctype="multipart/form-data">
       {% csrf_token %}
       <p>{{ form.non_field_errors }}</p>
 
-      {% for field in form %}
-        {% if field.errors %}
-          {{ field.errors }}
-        {% endif %}
-        <center>
-        <p>
-        <label class="algo-name">{{ field.label_tag }}</label>
-        <span class="algo-check" style="display: inline;">{{ field }}</span>
-        </p>
-    </center>
-      {% endfor %}
-      <span>Note: Select multiple to compare</span>
+      <h3>Enter Key</h3>
+      <input class="key" type="text" placeholder="e.g. 'secret'" name="key" required maxlength="32">
 
       <br>
       <br>
+      <hr width="100%">
+
+      <h3>Select Algorithm</h3>
+
+      {% if form.field.errors %}
+        {{ form.field.errors }}
+      {% endif %}
+
+      {% for choice in form.choice_field.field.choices %}
+      <center>
+      <p>
+        <label for="id_choice_field_%d" % forloop.counter class="algo-name">{{ choice.1 }}</label>
+        <span class="algo-check" style="display: inline;">
+          <input id="id_choice_field_%d" % forloop.counter type="checkbox" name="choice_field" value={{ choice.0 }} style="display: inline;"/>
+        </span>
+      </p>
+      </center>
+      {% endfor %}
+
+      <br>
+      <p>Note: Select multiple to compare</p>
       <p><input class="btn btn-block btn-success" type="submit" value="Submit" /></p>
     </form>
   </div>
-  <div class="col-md-5"></div>
+
+  <div class="col-md-4"></div>
 </div>
 
 {% endblock %}
