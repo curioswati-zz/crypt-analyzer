@@ -1,9 +1,0 @@
-{% extends "base.html" %}
-
-{% block content %}
-
-{% for file in result %}
-<div>{{ file.name }} {{ file.encryption_time }} {{ file.size }}</div>
-{% endfor %}
-
-{% endblock %}

@@ -40,7 +40,8 @@ DEFAULTS = [
 ]
 
 THIRD_PARTY = [
-    'bootstrap3'
+    'bootstrap3',
+    'django_nvd3'
 ]
 
 OUR_APPS = [
