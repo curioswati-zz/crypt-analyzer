@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+{% load nvd3_tags %}
+
+{% block title %}Crypt-Analyzer{% endblock %}
+
+{% block css %}
+    <!-- nvd3.css -->
+    <link href="{% static 'css/nv.d3.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block nvd3 %}
+    <!-- d3.js -->
+    <script src="{% static 'js/d3.v3.min.js' %}"></script>
+
+    <!-- nv.d3.js -->
+	<script src="{% static 'js/nv.d3.min.js' %}"></script>    
+
+    {% include_chart_jscss %}
+    {% load_chart charttype chartdata "linechart_container" extra %}
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+      <div class="col-md-6">
+        {% include_container "linechart_container" 350 550 %}
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+      {% for file in result %}
+
+        <div>{{ file.name }} {{ file.encryption_time }} {{ file.size }}</div>
+
+      {% endfor %}
+      </div>
+    </div>
+{% endblock %}

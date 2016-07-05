@@ -1,8 +1,11 @@
 # import json
+import random
+import time
+import datetime
 
 from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import render, render_to_response
 from django.views import generic
 
 from .forms import UploadFileForm, SelectAlgorithmForm
@@ -75,12 +78,34 @@ def SelectAlgorithm(request, type):
     return HttpResponseRedirect(reverse_lazy("base:visual_analysis"))
 
 
-class VisualAnalysis(generic.TemplateView):
-    template_name = "graph.html"
+def VisualAnalysis(request):
+    """
+    lineChart page
+    """
+    start_time = int(time.mktime(datetime.datetime(2012, 6, 1).timetuple()) * 1000)
+    nb_element = 100
+    xdata = range(nb_element)
+    xdata = list(map(lambda x: start_time + x * 1000000000, xdata))
+    ydata = [i + random.randint(1, 10) for i in range(nb_element)]
+    ydata2 = list(map(lambda x: x * 2, ydata))
 
-    def get_context_data(self, *args, **kwargs):
-        self.context = super(VisualAnalysis, self).get_context_data(*args, **kwargs)
-        self.context['test'] = "swati"
-        self.context['result'] = self.request.session['files_data']
+    tooltip_date = "%d %b %Y %H:%M:%S %p"
+    extra_serie = {"tooltip": {"y_start": "", "y_end": " cal"},
+                   "date_format": tooltip_date}
+    chartdata = {'x': xdata,
+                 'name1': 'series 1', 'y1': ydata, 'extra1': extra_serie,
+                 'name2': 'series 2', 'y2': ydata2, 'extra2': extra_serie}
+    charttype = "lineChart"
+    data = {
+        'charttype': charttype,
+        'chartdata': chartdata,
+        'chartcontainer': 'linechart_container',
+        'extra': {
+            'x_is_date': True,
+            'x_axis_format': "%d %b %Y %H",
+            'tag_script_js': True,
+        },
+        'result': request.session['files_data']
+    }
 
-        return self.context
+    return render_to_response('result.html', data)
