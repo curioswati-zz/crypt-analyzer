@@ -11,5 +11,6 @@ urlpatterns = [
     url(r'^decryption/data_file/', views.DecryptionData.as_view(), name='decryption_data'),
     url(r'^decryption/key_file/', views.DecryptionKey.as_view(), name='decryption_key'),
     url(r'^select_algorithm/(?P<type>[\w]+)/', views.SelectAlgorithm, name='select_algorithm'),
+    url(r'^result/', views.VisualAnalysis.as_view(), name='visual_analysis'),
     url(r'^$', views.IndexView.as_view(), name='index'),
 ]

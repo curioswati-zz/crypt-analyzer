@@ -1,3 +1,5 @@
+import time
+
 from Crypto.Cipher import AES
 
 
@@ -66,12 +68,33 @@ class RCCipher(BaseCipher):
         self.cipher_obj = AES.new(self.key, AES.MODE_ECB)
 
 
-def encrypt(key, files, algorithms):
-    algos = {'aes': AESCipher(key=key, text=None),
-             'des': DESCipher(key=key, text=None),
-             'blowfish': BlowCipher(key=key, text=None),
-             'twofish': TwoCipher(key=key, text=None),
-             'rc6': RCCipher(key=key, text=None)
-             }
-    print(algorithms)
-    print(key)
+class Analyzer():
+    def __init__(self, algorithms, key):
+        algo_choices = {'aes': 'AESCipher',
+                        'des': 'DESCipher',
+                        'blowfish': 'BlowCipher',
+                        'twofish': 'TwoCipher',
+                        'rc6': 'RCCipher'
+                        }
+
+        self.algo_objs = []
+
+        for algo in algorithms:
+            if algo in algo_choices:
+                class_instance = eval(algo_choices[algo])
+                self.algo_objs.append(class_instance(key=key, text=None))
+
+    def analyze(self, files):
+        for algo_obj in self.algo_objs:
+            for f in files:
+                algo_obj.text = f['content']
+                f['encryption_time'] = self.calc_time(algo_obj)
+
+        return files
+
+    def calc_time(self, algo_obj):
+        start = time.clock()
+        eval('algo_obj.encrypt')
+        stop = time.clock()
+        total = stop - start
+        return total
