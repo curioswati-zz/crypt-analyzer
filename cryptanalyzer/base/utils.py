@@ -1,6 +1,8 @@
 import time
 
 from Crypto.Cipher import AES
+from Crypto.Cipher import DES3
+from Crypto.Cipher import Blowfish
 
 
 class BaseCipher():
@@ -28,7 +30,27 @@ class AESCipher(BaseCipher):
         self.cipher_obj = AES.new(self.key, AES.MODE_ECB)
 
 
-class DESCipher(BaseCipher):
+class DES3Cipher(BaseCipher):
+    def __init__(self, key, text):
+        self.key = key
+        self.text = text
+
+        # prepare cipher object
+        self.key = self.make_valid_input(self.key)
+        self.cipher_obj = DES3.new(self.key, DES3.MODE_ECB)
+
+
+class BlowfishCipher(BaseCipher):
+    def __init__(self, key, text):
+        self.key = key
+        self.text = text
+
+        # prepare cipher object
+        self.key = self.make_valid_input(self.key)
+        self.cipher_obj = Blowfish.new(self.key, Blowfish.MODE_ECB)
+
+
+class TwofishCipher(BaseCipher):
     def __init__(self, key, text):
         self.key = key
         self.text = text
@@ -38,27 +60,7 @@ class DESCipher(BaseCipher):
         self.cipher_obj = AES.new(self.key, AES.MODE_ECB)
 
 
-class BlowCipher(BaseCipher):
-    def __init__(self, key, text):
-        self.key = key
-        self.text = text
-
-        # prepare cipher object
-        self.key = self.make_valid_input(self.key)
-        self.cipher_obj = AES.new(self.key, AES.MODE_ECB)
-
-
-class TwoCipher(BaseCipher):
-    def __init__(self, key, text):
-        self.key = key
-        self.text = text
-
-        # prepare cipher object
-        self.key = self.make_valid_input(self.key)
-        self.cipher_obj = AES.new(self.key, AES.MODE_ECB)
-
-
-class RCCipher(BaseCipher):
+class RC6Cipher(BaseCipher):
     def __init__(self, key, text):
         self.key = key
         self.text = text
@@ -69,26 +71,27 @@ class RCCipher(BaseCipher):
 
 
 class Analyzer():
-    def __init__(self, algorithms, key):
+    def __init__(self):
+        pass
+
+    def analyze(self, algorithms, key, files):
         algo_choices = {'aes': 'AESCipher',
-                        'des': 'DESCipher',
-                        'blowfish': 'BlowCipher',
+                        'des': 'DES3Cipher',
+                        'blowfish': 'BlowfishCipher',
                         'twofish': 'TwoCipher',
                         'rc6': 'RCCipher'
                         }
 
-        self.algo_objs = []
-
+        # iterate over the selected algorithms by user
         for algo in algorithms:
             if algo in algo_choices:
                 class_instance = eval(algo_choices[algo])
-                self.algo_objs.append(class_instance(key=key, text=None))
+                algo_obj = class_instance(key=key, text=None)
 
-    def analyze(self, files):
-        for algo_obj in self.algo_objs:
-            for f in files:
-                algo_obj.text = f['content']
-                f['encryption_time'] = self.calc_time(algo_obj)
+                for f in files:
+                    algo_obj.text = f['content']
+                    key = algo+"_time"
+                    f[key] = self.calc_time(algo_obj)
 
         return files
 

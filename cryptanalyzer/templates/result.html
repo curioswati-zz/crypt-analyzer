@@ -24,16 +24,42 @@
 {% block content %}
     <div class="row">
       <div class="col-md-6">
-        {% include_container "linechart_container" 350 550 %}
+        {% include_container "linechart_container" 350 650 %}
+        <hr width="110%">
       </div>
     </div>
 
+
     <div class="row">
+
       <div class="col-md-6">
-      {% for file in result %}
+        <div class="row res-table table-header">
+          <div class="col-md-2">
+              S.No.
+          </div>
+          <div class="col-md-4">
+              File Name
+          </div>
+          <div class="col-md-5">
+              File Size
+          </div>
+        </div>
 
-        <div>{{ file.name }} {{ file.encryption_time }} {{ file.size }}</div>
+        {% for file in result %}
+        <div class="row res-table">
+          <div class="col-md-2">
+              {{ forloop.counter }}
+          </div>
 
+          <div class="col-md-4">
+              {{ file.name }}
+          </div>
+
+          <div class="col-md-5">
+              {{ file.size }} kb
+          </div>
+
+        </div>
       {% endfor %}
       </div>
     </div>

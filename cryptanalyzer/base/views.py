@@ -1,7 +1,4 @@
 # import json
-import random
-import time
-import datetime
 
 from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponseRedirect
@@ -69,10 +66,13 @@ def SelectAlgorithm(request, type):
     elif request.method == "POST":
         key = request.POST['key']
         form = SelectAlgorithmForm(request.POST)
-        algorithms = form['choice_field'].value()
-        analyzer = utils.Analyzer(algorithms, key)
-        files = analyzer.analyze(request.session['files_data'])
 
+        algorithms = form['choice_field'].value()
+        analyzer = utils.Analyzer()
+        files = analyzer.analyze(algorithms, key, request.session['files_data'])
+
+        # to pass requied variables to next view
+        request.session['algorithms'] = algorithms
         request.session['files_data'] = files
 
     return HttpResponseRedirect(reverse_lazy("base:visual_analysis"))
@@ -80,32 +80,32 @@ def SelectAlgorithm(request, type):
 
 def VisualAnalysis(request):
     """
-    lineChart page
+    result page
     """
-    start_time = int(time.mktime(datetime.datetime(2012, 6, 1).timetuple()) * 1000)
-    nb_element = 100
-    xdata = range(nb_element)
-    xdata = list(map(lambda x: start_time + x * 1000000000, xdata))
-    ydata = [i + random.randint(1, 10) for i in range(nb_element)]
-    ydata2 = list(map(lambda x: x * 2, ydata))
+    result = request.session['files_data']
+    result = sorted(result, key=lambda x: x['size'])
 
-    tooltip_date = "%d %b %Y %H:%M:%S %p"
-    extra_serie = {"tooltip": {"y_start": "", "y_end": " cal"},
-                   "date_format": tooltip_date}
-    chartdata = {'x': xdata,
-                 'name1': 'series 1', 'y1': ydata, 'extra1': extra_serie,
-                 'name2': 'series 2', 'y2': ydata2, 'extra2': extra_serie}
+    algorithms = request.session['algorithms']
+
+    xdata = [x['size'] for x in result]
+    chartdata = {'x': xdata, 'name1': 'Encryption Time in sec'}
+
+    for i, algo in enumerate(algorithms):
+        chartdata['y%d' % i] = [x[algo+'_time'] for x in result]
+        chartdata['name%d' % i] = algo.capitalize() + " Encryption Time"
+
     charttype = "lineChart"
     data = {
         'charttype': charttype,
         'chartdata': chartdata,
         'chartcontainer': 'linechart_container',
         'extra': {
-            'x_is_date': True,
-            'x_axis_format': "%d %b %Y %H",
-            'tag_script_js': True,
+            'x_is_date': False,
+            'x_axis_format': ".03f",
+            'y_axis_format': ".06f",
+            'tag_script_js': True
         },
-        'result': request.session['files_data']
+        'result': result
     }
 
     return render_to_response('result.html', data)
