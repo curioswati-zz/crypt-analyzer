@@ -32,20 +32,12 @@ class DecryptionData(generic.FormView):
     success_url = "base:select_algorithm"
     template_name = "decryption_data.html"
 
-    def form_valid(self, form):
-        data = []
-        for field in form.fields:
-            f = form[field].value()
-            data.append(f.read())
-
-        return HttpResponseRedirect(reverse_lazy(self.success_url))
-
 
 class DecryptionKey(generic.TemplateView):
     template_name = "decryption_key.html"
 
 
-def SelectAlgorithm(request, type):
+def SelectAlgorithm(request, analysis_type):
 
     # if the previous form is in post, i.e. uploaded files present
     if request.method == "POST" and request.FILES:
@@ -69,13 +61,17 @@ def SelectAlgorithm(request, type):
 
         algorithms = form['choice_field'].value()
         analyzer = utils.Analyzer()
-        files = analyzer.analyze(algorithms, key, request.session['files_data'])
+        files = analyzer.analyze(analysis_type, algorithms, key, request.session['files_data'])
 
         # to pass requied variables to next view
         request.session['algorithms'] = algorithms
         request.session['files_data'] = files
 
-    return HttpResponseRedirect(reverse_lazy("base:visual_analysis"))
+        return HttpResponseRedirect(reverse_lazy("base:visual_analysis"))
+
+    else:
+        form = SelectAlgorithmForm()
+        return render(request, "select_algorithm.html", {'form': form})
 
 
 def VisualAnalysis(request):
@@ -91,8 +87,8 @@ def VisualAnalysis(request):
     chartdata = {'x': xdata, 'name1': 'Encryption Time in sec'}
 
     for i, algo in enumerate(algorithms):
-        chartdata['y%d' % i] = [x[algo+'_time'] for x in result]
-        chartdata['name%d' % i] = algo.capitalize() + " Encryption Time"
+        chartdata['y%d' % int(i+1)] = [x[algo+'_time'] for x in result]
+        chartdata['name%d' % int(i+1)] = algo.capitalize() + " Encryption Time"
 
     charttype = "lineChart"
     data = {

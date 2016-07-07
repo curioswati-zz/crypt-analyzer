@@ -74,7 +74,7 @@ class Analyzer():
     def __init__(self):
         pass
 
-    def analyze(self, algorithms, key, files):
+    def analyze(self, analysis_type, algorithms, key, files):
         algo_choices = {'aes': 'AESCipher',
                         'des': 'DES3Cipher',
                         'blowfish': 'BlowfishCipher',
@@ -91,13 +91,33 @@ class Analyzer():
                 for f in files:
                     algo_obj.text = f['content']
                     key = algo+"_time"
-                    f[key] = self.calc_time(algo_obj)
+                    if analysis_type == "encryption":
+                        f[key] = self.calc_enc_time(algo_obj)
 
+                    elif analysis_type == "decryption":
+                        f[key] = self.calc_dec_time(algo_obj)
+
+        print(files)
         return files
 
-    def calc_time(self, algo_obj):
-        start = time.clock()
-        eval('algo_obj.encrypt')
-        stop = time.clock()
-        total = stop - start
-        return total
+    def calc_enc_time(self, algo_obj):
+        taken_times = []
+        for i in range(10):
+            start = time.clock()
+            eval('algo_obj.encrypt')()
+            stop = time.clock()
+            taken_times.append(stop - start)
+
+        return sum(taken_times) / float(len(taken_times))
+
+    def calc_dec_time(self, algo_obj):
+        algo_obj.encrypt()
+
+        taken_times = []
+        for i in range(10):
+            start = time.clock()
+            eval('algo_obj.decrypt')()
+            stop = time.clock()
+            taken_times.append(stop - start)
+
+        return sum(taken_times) / float(len(taken_times))

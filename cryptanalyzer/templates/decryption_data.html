@@ -16,7 +16,7 @@
     <span>Note: You can select file types varying in (Audio, Video, Text and Images).</span>
 
     <hr>
-    <form id="file-upload-form" method="post" enctype="multipart/form-data">
+    <form id="file-upload-form" action="{% url 'base:select_algorithm' 'decryption'%}" method="post" enctype="multipart/form-data">
       {% csrf_token %}
       <p>{{ form.non_field_errors }}</p>
       {% for field in form %}
