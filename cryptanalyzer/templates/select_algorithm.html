@@ -13,14 +13,8 @@
       {% csrf_token %}
       <p>{{ form.non_field_errors }}</p>
 
-      <h3>Enter Key</h3>
-      <input class="key" type="text" placeholder="e.g. 'secret'" name="key" required maxlength="32">
-
-      <br>
-      <br>
+      <h3>Select Algorithm for Analysis</h3>
       <hr width="100%">
-
-      <h3>Select Algorithm</h3>
 
       {% if form.field.errors %}
         {{ form.field.errors }}

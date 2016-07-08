@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block title %}{{ analysis_type | title }} Time Analyzer {% endblock %}
+{% block content %}
+<center>
+  <h1>{{ analysis_type | title }} Time Analyzer</h1>
+  <h3>Varying Key Size</h3>
+</center>
+
+<div class="row">
+  <div class="col-md-3"></div>
+  <div class="col-md-6">
+    <hr>
+
+    <form id="file-upload-form" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      
+      <h4>Select Key Files</h4>
+      <span>Note: The key length should not excede {{ keylen }} charactes.</span>
+
+      <p>{{ form.non_field_errors }}</p>
+      {% for field in form %}
+        <p style="display: inline;">{{ field.label_tag }}</p>
+        {% if field.errors %}
+          {{ field.errors }}
+        {% endif %}
+        <p class="btn btn-default">
+          {{ field }}
+        </p>
+        <br>
+        <br>
+      {% endfor %}
+
+      <hr>
+
+      <h4>Select Data File </h4>
+      <p>
+      <input class="btn btn-default" name="data" type="file" maxlength={{ keylen }}>
+      </p>
+
+      <br>
+      <br>
+
+      <p><input class="btn btn-block btn-success" type="submit" value="Upload" /></p>
+    </form>
+
+  </div>
+  <div class="col-md-3"></div>
+</div>
+
+{% endblock %}

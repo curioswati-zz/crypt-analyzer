@@ -1,5 +1,3 @@
-# import json
-
 from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, render_to_response
@@ -17,61 +15,112 @@ class ContactView(generic.TemplateView):
     template_name = "index.html"
 
 
-class EncryptionData(generic.FormView):
-    form_class = UploadFileForm
-    success_url = "base:select_algorithm"
-    template_name = "encryption_data.html"
-
-
-class EncryptionKey(generic.TemplateView):
-    template_name = "encryption_key.html"
-
-
-class DecryptionData(generic.FormView):
-    form_class = UploadFileForm
-    success_url = "base:select_algorithm"
-    template_name = "decryption_data.html"
-
-
-class DecryptionKey(generic.TemplateView):
-    template_name = "decryption_key.html"
-
-
-def SelectAlgorithm(request, analysis_type):
-
-    # if the previous form is in post, i.e. uploaded files present
-    if request.method == "POST" and request.FILES:
-        files_data = []
-        files = request.FILES
-        for f in files:
-            file_data = {'name': files[f].name,
-                         'content': str(files[f].read()),
-                         'size': files[f].size / 1024.0
-                         }
-            files_data.append(file_data)
-
-        request.session['files_data'] = files_data
+def SelectAlgorithm(request, analysis_type, varying):
+    if request.method == "GET":
+        request.session['analysis_type'] = analysis_type
+        request.session['varying'] = varying
 
         form = SelectAlgorithmForm()
+
         return render(request, "select_algorithm.html", {'form': form})
 
     elif request.method == "POST":
-        key = request.POST['key']
         form = SelectAlgorithmForm(request.POST)
+        request.session['algorithms'] = form['choice_field'].value()
 
-        algorithms = form['choice_field'].value()
-        analyzer = utils.Analyzer()
-        files = analyzer.analyze(analysis_type, algorithms, key, request.session['files_data'])
+        if request.session['varying'] == 'file_size':
+            return HttpResponseRedirect(reverse_lazy("base:vary_file_size"))
 
-        # to pass requied variables to next view
-        request.session['algorithms'] = algorithms
-        request.session['files_data'] = files
+        elif request.session['varying'] == 'key_size':
+            return HttpResponseRedirect(reverse_lazy("base:vary_key_size"))
+
+
+def VaryFileSize(request):
+    if request.method == "GET":
+        form = UploadFileForm()
+        analysis_type = request.session['analysis_type']
+        algorithms = request.session['algorithms']
+
+        if 'des' in algorithms:
+            keylen = 24
+        elif 'aes' in algorithms:
+            keylen = 32
+        else:
+            keylen = 56
+
+        return render(request, "varying_file_size.html",
+                      {'form': form,
+                       'analysis_type': analysis_type,
+                       'keylen': keylen
+                       })
+
+    else:
+        key = request.POST['key']
+        form = UploadFileForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            files_data = []
+            files = form.cleaned_data
+            for entry in files:
+                file_data = {'name': files[entry].name,
+                             'content': str(files[entry].read()),
+                             'size': files[entry].size / 1024.0
+                             }
+                files_data.append(file_data)
+
+            algorithms = request.session['algorithms']
+            analyzer = utils.Analyzer()
+            files = analyzer.analyze_varying_data(request.session['analysis_type'],
+                                                  algorithms, key, files_data)
+
+            # to pass requied variables to next view
+            request.session['files_data'] = files
 
         return HttpResponseRedirect(reverse_lazy("base:visual_analysis"))
 
+
+def VaryKeySize(request):
+    if request.method == "GET":
+        form = UploadFileForm()
+        analysis_type = request.session['analysis_type']
+        algorithms = request.session['algorithms']
+
+        if 'des' in algorithms:
+            keylen = 24
+        elif 'aes' in algorithms:
+            keylen = 32
+        else:
+            keylen = 56
+
+        return render(request, "varying_key_size.html",
+                      {'form': form,
+                       'analysis_type': analysis_type,
+                       'keylen': keylen
+                       })
+
     else:
-        form = SelectAlgorithmForm()
-        return render(request, "select_algorithm.html", {'form': form})
+        data = request.FILES['data'].read()
+        form = UploadFileForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            key_files_data = []
+            files = form.cleaned_data
+            for entry in files:
+                file_data = {'name': files[entry].name,
+                             'content': str(files[entry].read()),
+                             'size': files[entry].size / 1024.0
+                             }
+                key_files_data.append(file_data)
+
+            algorithms = request.session['algorithms']
+            analyzer = utils.Analyzer()
+            files = analyzer.analyze_varying_key(request.session['analysis_type'],
+                                                 algorithms, data, key_files_data)
+
+            # to pass requied variables to next view
+            request.session['files_data'] = files
+
+        return HttpResponseRedirect(reverse_lazy("base:visual_analysis"))
 
 
 def VisualAnalysis(request):

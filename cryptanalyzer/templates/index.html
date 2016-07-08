@@ -14,13 +14,13 @@
 <div class="row">
   <div class="col-md-6 analysis-type-card">
     <span>
-      <a href="{% url 'base:encryption_data' %}">Encryption</a>
+      <a href="{% url 'base:select_algorithm' 'encryption' 'file_size' %}">Encryption</a>
     </span><br>
     <span>Varying File Size</span>
   </div>
   <div class="col-md-6 analysis-type-card">
     <span>
-      <a href="{% url 'base:encryption_key' %}">Encryption</a>
+      <a href="{% url 'base:select_algorithm' 'encryption' 'key_size' %}">Encryption</a>
     </span><br>
     <span>Varying Key Size</span>
   </div>
@@ -28,13 +28,13 @@
 <div class="row">
   <div class="col-md-6 analysis-type-card">
     <span>
-      <a href="{% url 'base:decryption_data' %}">Decryption</a>
+      <a href="{% url 'base:select_algorithm' 'decryption' 'file_size' %}">Decryption</a>
     </span><br>
     <span>Varying File Size</span>
   </div>
   <div class="col-md-6 analysis-type-card">
     <span>
-      <a href="{% url 'base:decryption_key' %}">Decryption</a>
+      <a href="{% url 'base:select_algorithm' 'decryption' 'key_size' %}">Decryption</a>
     </span><br>
     <span>Varying Key Size</span>
   </div>
