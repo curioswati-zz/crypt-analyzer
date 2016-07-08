@@ -1,0 +1,43 @@
+.analysis-type-card {
+    width: 25%;
+    height: 180px;
+    padding: 2% 5%;
+    margin: 3% 12%;
+    border: 1px solid;
+    border-radius: 5%;
+}
+.file-field {
+    width: 50px;
+    height: 30px;
+}
+.algo-name {
+    width: 100px;
+    height: 35px;
+    background-color: #5BC0DE;
+    padding: 1% 5%;
+    border: 1px groove white;
+}
+.algo-check {
+    position: relative;
+    top: 3px;
+    margin: -4px;
+    padding: 10px 13px;
+    background-color: #E0E0E0;
+}
+.key {
+    margin-left: 5px;
+    width: 295px;
+    height: 35px;
+    border-radius: 5px;
+}
+.res-table {
+    margin-left: 7px;
+}
+.res-table > div {
+    margin: 5px;
+    border-left: 1px solid;
+}
+.table-header {
+    font-weight: bold;
+    border-bottom: 1px solid;
+}
