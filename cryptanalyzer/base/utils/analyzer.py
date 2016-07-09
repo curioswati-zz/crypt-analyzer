@@ -4,11 +4,19 @@ from Crypto.Cipher import AES
 from Crypto.Cipher import DES3
 from Crypto.Cipher import Blowfish
 from twofish import Twofish
+from .rc6 import RC6
 
 
 class BaseCipher():
+
     def make_valid_text(self):
-        if isinstance(self, AESCipher) or isinstance(self, TwofishCipher):
+        self.text = str(self.text)
+
+        if (
+            isinstance(self, AESCipher) or
+            isinstance(self, TwofishCipher) or
+            isinstance(self, RC6Cipher)
+           ):
             min_multiple = 16
         else:
             min_multiple = 8
@@ -18,22 +26,15 @@ class BaseCipher():
             self.text += "X" * (min_multiple - quotient)
 
     def make_valid_key(self):
-        if not type(self.key) == str:
-            self.key = self.key.decode()
+        self.key = str(self.key)
 
-        # set minimum allowed length of key
-        if isinstance(self, TwofishCipher):
-            return
-        elif isinstance(self, BlowfishCipher):
-            min_allowed_len = 4
-        else:
-            min_allowed_len = 16
+        quotient = len(self.key) % 16
 
-        min_multiple = int(min_allowed_len/2)
-        quotient = len(self.key) % min_multiple
+        if quotient:
+            self.key += "X" * (16 - quotient)
 
-        if len(self.key) < min_allowed_len or quotient:
-            self.key += "X" * (min_multiple - quotient)
+        if isinstance(self, DES3Cipher):
+            self.key = self.key[:24]
 
     def encrypt(self):
         self.ciph = self.cipher_obj.encrypt(self.text)
@@ -44,6 +45,7 @@ class BaseCipher():
 
 
 class AESCipher(BaseCipher):
+
     def __init__(self, key, text):
         self.key = key
         self.text = text
@@ -55,6 +57,7 @@ class AESCipher(BaseCipher):
 
 
 class DES3Cipher(BaseCipher):
+
     def __init__(self, key, text):
         self.key = key
         self.text = text
@@ -66,6 +69,7 @@ class DES3Cipher(BaseCipher):
 
 
 class BlowfishCipher(BaseCipher):
+
     def __init__(self, key, text):
         self.key = key
         self.text = text
@@ -75,8 +79,13 @@ class BlowfishCipher(BaseCipher):
         self.make_valid_key()
         self.cipher_obj = Blowfish.new(self.key, Blowfish.MODE_ECB)
 
+    def make_valid_key(self):
+        if len(self.key) < 4:
+            self.key += "X" * (4 - len(self.key))
+
 
 class TwofishCipher(BaseCipher):
+
     def __init__(self, key, text):
         self.key = key
         self.text = text
@@ -85,6 +94,9 @@ class TwofishCipher(BaseCipher):
         # prepare cipher object
         self.make_valid_key()
         self.cipher_obj = Twofish(self.key.encode())
+
+    def make_valid_key(self):
+        pass
 
     def encrypt(self):
         parts = [self.text[i:i+16] for i in range(0, len(self.text), 16)]
@@ -105,16 +117,41 @@ class TwofishCipher(BaseCipher):
 
 
 class RC6Cipher(BaseCipher):
+
     def __init__(self, key, text):
         self.key = key
         self.text = text
+        self.original = text
 
         # prepare cipher object
         self.make_valid_key()
-        self.cipher_obj = AES.new(self.key, AES.MODE_ECB)
+        self.cipher_obj = RC6(self.key)
+
+    def make_valid_key(self):
+        if len(self.key) < 16:
+            self.key += "X" * (16 - len(self.key))
+        self.key = self.key[:16]
+
+    def encrypt(self):
+        parts = [self.text[i:i+16] for i in range(0, len(self.text), 16)]
+        self.ciph = []
+
+        for part in parts:
+            ciph = self.cipher_obj.encrypt(part)
+            self.ciph.append(ciph)
+
+    def decrypt(self):
+        decrypted = []
+
+        for encrypted_part in self.ciph:
+            decrypted_part = self.cipher_obj.decrypt(encrypted_part)
+            decrypted.append(decrypted_part)
+
+        return ''.join(decrypted)[:len(self.original)]
 
 
 class Analyzer():
+
     def __init__(self):
         pass
 
@@ -123,7 +160,7 @@ class Analyzer():
                         'des': 'DES3Cipher',
                         'blowfish': 'BlowfishCipher',
                         'twofish': 'TwofishCipher',
-                        'rc6': 'RCCipher'
+                        'rc6': 'RC6Cipher'
                         }
 
         # iterate over the selected algorithms by user
@@ -134,6 +171,7 @@ class Analyzer():
 
                 for f in files:
                     algo_obj.text = f['content']
+                    algo_obj.original = f['content']
                     algo_obj.make_valid_text()
 
                     key = algo+"_time"
@@ -149,8 +187,8 @@ class Analyzer():
         algo_choices = {'aes': 'AESCipher',
                         'des': 'DES3Cipher',
                         'blowfish': 'BlowfishCipher',
-                        'twofish': 'TwoCipher',
-                        'rc6': 'RCCipher'
+                        'twofish': 'TwofishCipher',
+                        'rc6': 'RC6Cipher'
                         }
 
         # iterate over the selected algorithms by user
@@ -174,7 +212,7 @@ class Analyzer():
 
     def calc_enc_time(self, algo_obj):
         taken_times = []
-        for i in range(10):
+        for i in range(5):
             start = time.clock()
             eval('algo_obj.encrypt')()
             stop = time.clock()
@@ -186,7 +224,7 @@ class Analyzer():
         algo_obj.encrypt()
 
         taken_times = []
-        for i in range(10):
+        for i in range(5):
             start = time.clock()
             eval('algo_obj.decrypt')()
             stop = time.clock()

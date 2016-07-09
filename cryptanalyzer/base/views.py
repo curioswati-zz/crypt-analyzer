@@ -4,7 +4,7 @@ from django.shortcuts import render, render_to_response
 from django.views import generic
 
 from .forms import UploadFileForm, SelectAlgorithmForm
-from . import utils
+from .utils import analyzer
 
 
 class IndexView(generic.TemplateView):
@@ -41,7 +41,9 @@ def VaryFileSize(request):
         analysis_type = request.session['analysis_type']
         algorithms = request.session['algorithms']
 
-        if 'des' in algorithms:
+        if 'rc6' in algorithms:
+            keylen = 16
+        elif 'des' in algorithms:
             keylen = 24
         elif 'twofish' in algorithms or 'aes' in algorithms:
             keylen = 32
@@ -69,9 +71,9 @@ def VaryFileSize(request):
                 files_data.append(file_data)
 
             algorithms = request.session['algorithms']
-            analyzer = utils.Analyzer()
-            files = analyzer.analyze_varying_data(request.session['analysis_type'],
-                                                  algorithms, key, files_data)
+            analyzer_obj = analyzer.Analyzer()
+            files = analyzer_obj.analyze_varying_data(request.session['analysis_type'],
+                                                      algorithms, key, files_data)
 
             # to pass requied variables to next view
             request.session['files_data'] = files
@@ -113,9 +115,9 @@ def VaryKeySize(request):
                 key_files_data.append(file_data)
 
             algorithms = request.session['algorithms']
-            analyzer = utils.Analyzer()
-            files = analyzer.analyze_varying_key(request.session['analysis_type'],
-                                                 algorithms, data, key_files_data)
+            analyzer_obj = analyzer.Analyzer()
+            files = analyzer_obj.analyze_varying_key(request.session['analysis_type'],
+                                                     algorithms, data, key_files_data)
 
             # to pass requied variables to next view
             request.session['files_data'] = files
