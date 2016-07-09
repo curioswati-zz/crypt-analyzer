@@ -3,13 +3,12 @@ import time
 from Crypto.Cipher import AES
 from Crypto.Cipher import DES3
 from Crypto.Cipher import Blowfish
+from twofish import Twofish
 
 
 class BaseCipher():
     def make_valid_text(self):
-        self.text = str(self.text)
-
-        if isinstance(self, AESCipher):
+        if isinstance(self, AESCipher) or isinstance(self, TwofishCipher):
             min_multiple = 16
         else:
             min_multiple = 8
@@ -19,10 +18,13 @@ class BaseCipher():
             self.text += "X" * (min_multiple - quotient)
 
     def make_valid_key(self):
-        self.key = str(self.key)
+        if not type(self.key) == str:
+            self.key = self.key.decode()
 
         # set minimum allowed length of key
-        if isinstance(self, BlowfishCipher):
+        if isinstance(self, TwofishCipher):
+            return
+        elif isinstance(self, BlowfishCipher):
             min_allowed_len = 4
         else:
             min_allowed_len = 16
@@ -37,13 +39,15 @@ class BaseCipher():
         self.ciph = self.cipher_obj.encrypt(self.text)
 
     def decrypt(self):
-        return self.cipher_obj.decrypt(self.ciph)[:len(self.text)]
+        to_return = self.cipher_obj.decrypt(self.ciph)[:len(self.text)]
+        return to_return
 
 
 class AESCipher(BaseCipher):
     def __init__(self, key, text):
         self.key = key
         self.text = text
+        self.original = text
 
         # prepare cipher object
         self.make_valid_key()
@@ -54,6 +58,7 @@ class DES3Cipher(BaseCipher):
     def __init__(self, key, text):
         self.key = key
         self.text = text
+        self.original = text
 
         # prepare cipher object
         self.make_valid_key()
@@ -64,6 +69,7 @@ class BlowfishCipher(BaseCipher):
     def __init__(self, key, text):
         self.key = key
         self.text = text
+        self.original = text
 
         # prepare cipher object
         self.make_valid_key()
@@ -74,10 +80,28 @@ class TwofishCipher(BaseCipher):
     def __init__(self, key, text):
         self.key = key
         self.text = text
+        self.original = text
 
         # prepare cipher object
         self.make_valid_key()
-        self.cipher_obj = AES.new(self.key, AES.MODE_ECB)
+        self.cipher_obj = Twofish(self.key.encode())
+
+    def encrypt(self):
+        parts = [self.text[i:i+16] for i in range(0, len(self.text), 16)]
+        self.ciph = []
+
+        for part in parts:
+            ciph = self.cipher_obj.encrypt(part.encode())
+            self.ciph.append(ciph)
+
+    def decrypt(self):
+        decrypted = []
+
+        for encrypted_part in self.ciph:
+            decrypted_part = self.cipher_obj.decrypt(encrypted_part)
+            decrypted.append(decrypted_part)
+
+        return ''.join(map(lambda x: x.decode(), decrypted))[:len(self.original)]
 
 
 class RC6Cipher(BaseCipher):
@@ -98,7 +122,7 @@ class Analyzer():
         algo_choices = {'aes': 'AESCipher',
                         'des': 'DES3Cipher',
                         'blowfish': 'BlowfishCipher',
-                        'twofish': 'TwoCipher',
+                        'twofish': 'TwofishCipher',
                         'rc6': 'RCCipher'
                         }
 

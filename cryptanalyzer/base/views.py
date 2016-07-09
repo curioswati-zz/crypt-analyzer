@@ -43,7 +43,7 @@ def VaryFileSize(request):
 
         if 'des' in algorithms:
             keylen = 24
-        elif 'aes' in algorithms:
+        elif 'twofish' in algorithms or 'aes' in algorithms:
             keylen = 32
         else:
             keylen = 56
@@ -87,7 +87,7 @@ def VaryKeySize(request):
 
         if 'des' in algorithms:
             keylen = 24
-        elif 'aes' in algorithms:
+        elif 'twofish' in algorithms or 'aes' in algorithms:
             keylen = 32
         else:
             keylen = 56
