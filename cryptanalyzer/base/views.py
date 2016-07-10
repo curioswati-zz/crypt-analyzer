@@ -4,7 +4,7 @@ from django.shortcuts import render, render_to_response
 from django.views import generic
 
 from .forms import UploadFileForm, SelectAlgorithmForm
-from .utils import analyzer
+from .utils import analyzer, utils
 
 
 class IndexView(generic.TemplateView):
@@ -132,6 +132,8 @@ def VisualAnalysis(request):
     result = request.session['files_data']
     result = sorted(result, key=lambda x: x['size'])
 
+    sysconfig = utils.get_system_config()
+
     algorithms = request.session['algorithms']
 
     xdata = [x['size'] for x in result]
@@ -152,7 +154,8 @@ def VisualAnalysis(request):
             'y_axis_format': ".06f",
             'tag_script_js': True
         },
-        'result': result
+        'result': result,
+        'sysconfig': sysconfig
     }
 
     return render_to_response('result.html', data)
