@@ -17,6 +17,10 @@
     <!-- nv.d3.js -->
 	<script src="{% static 'js/nv.d3.min.js' %}"></script>    
 
+    <!-- saveSvgAsPng -->
+	<script src="{% static 'js/saveSvgAsPng.js' %}"></script>
+	<script src="{% static 'js/saveChart.js' %}"></script>
+
     {% include_chart_jscss %}
     {% load_chart charttype chartdata "linechart_container" extra %}
 {% endblock %}
@@ -64,6 +68,7 @@
         <h3>Analysis Result</h3>
         {% include_container "linechart_container" 350 650 %}
       </div>
+      <div class="btn btn-info" onclick="saveChart();">Export Chart as PNG</div>
     </div>
 
     <hr width="100%">
