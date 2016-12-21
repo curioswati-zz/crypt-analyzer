@@ -1,5 +1,11 @@
+import os
 import platform
 import subprocess
+
+from django.conf import settings
+from django.core.files import File
+
+from .. import models
 
 
 def get_system_config():
@@ -31,3 +37,23 @@ def get_system_config():
         sysconfig['architecture'] = platform.architecture()[0]
 
         return sysconfig
+
+
+def save_encrypted_file(filename, content):
+    '''
+    saves the encrypted file to database.
+    '''
+
+    filename = settings.MEDIA_ROOT + '/files/' + filename
+    with open(filename, 'wb+') as f:
+        encrypted_file = File(f)
+        encrypted_file.write(content)
+
+        file_instance = models.EncryptedFile(name=filename,
+                                             file_data=encrypted_file)
+        file_instance.save()
+
+    # remove the original file(before database upload) from filesystem
+    os.remove(filename)
+
+    return file_instance

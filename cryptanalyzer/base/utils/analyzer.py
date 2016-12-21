@@ -4,7 +4,9 @@ from Crypto.Cipher import AES
 from Crypto.Cipher import DES3
 from Crypto.Cipher import Blowfish
 from twofish import Twofish
+
 from .rc6 import RC6
+from . import utils
 
 
 class BaseCipher():
@@ -169,17 +171,22 @@ class Analyzer():
                 class_instance = eval(algo_choices[algo])
                 algo_obj = class_instance(key=key, text=None)
 
-                for f in files:
-                    algo_obj.text = f['content']
-                    algo_obj.original = f['content']
+                for datafile in files:
+                    algo_obj.text = datafile['content']
+                    algo_obj.original = datafile['content']
                     algo_obj.make_valid_text()
 
                     key = algo+"_time"
                     if analysis_type == "encryption":
-                        f[key] = self.calc_enc_time(algo_obj)
+                        datafile[key] = self.calc_enc_time(algo_obj)
+
+                        # save encrypted file for later decryption
+                        file_instance = utils.save_encrypted_file(datafile['name'],
+                                                                  algo_obj.ciph)
+                        datafile['file_path'] = file_instance.file_data.path
 
                     elif analysis_type == "decryption":
-                        f[key] = self.calc_dec_time(algo_obj)
+                        datafile[key] = self.calc_dec_time(algo_obj)
 
         return files
 
@@ -204,6 +211,12 @@ class Analyzer():
                     key = algo+"_time"
                     if analysis_type == "encryption":
                         keyfile[key] = self.calc_enc_time(algo_obj)
+
+                        # save encrypted file for later decryption
+                        file_instance = utils.save_encrypted_file(keyfile['name'],
+                                                                  algo_obj.ciph)
+
+                        keyfile['file_path'] = file_instance.file_data.path
 
                     elif analysis_type == "decryption":
                         keyfile[key] = self.calc_dec_time(algo_obj)
