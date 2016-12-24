@@ -64,11 +64,19 @@
     <hr width="100%">
 
     <div class="row">
-      <div class="col-md-6">
-        <h3>Analysis Result</h3>
-        {% include_container "linechart_container" 350 650 %}
+      <h3>Analysis Result</h3>
+        <div id="encryption-container" class="col-md-6">
+          {% if show_decrypt %}
+          <a id="decrypt" class="btn btn-info pull-right" href="{% url 'base:decrypt' %}">Decrypt</a>
+          {% endif %}
+          <div class="btn btn-info pull-right" onclick="saveChart();">Export Chart as PNG</div>
+          {% include_container "linechart_container" 350 600 %}
+        </div>
+        <!--div id="decryption-container" class="col-md-6">
+          <div class="row btn btn-info pull-right" onclick="saveChart();">Export Chart as PNG</div>
+          {# % include_container "linechart_container1" 350 600 % #}
+        </div-->
       </div>
-      <div class="btn btn-info" onclick="saveChart();">Export Chart as PNG</div>
     </div>
 
     <hr width="100%">
@@ -108,4 +116,8 @@
       </div>
     </div>
 
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'js/custom.js' %}"></script>
 {% endblock %}

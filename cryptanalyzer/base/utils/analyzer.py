@@ -140,13 +140,13 @@ class RC6Cipher(BaseCipher):
 
         for part in parts:
             ciph = self.cipher_obj.encrypt(part)
-            self.ciph.append(ciph)
+            self.ciph.append(ciph.encode())
 
     def decrypt(self):
         decrypted = []
 
         for encrypted_part in self.ciph:
-            decrypted_part = self.cipher_obj.decrypt(encrypted_part)
+            decrypted_part = self.cipher_obj.decrypt(encrypted_part.decode())
             decrypted.append(decrypted_part)
 
         return ''.join(decrypted)[:len(self.original)]
@@ -172,8 +172,14 @@ class Analyzer():
                 algo_obj = class_instance(key=key, text=None)
 
                 for datafile in files:
-                    algo_obj.text = datafile['content']
-                    algo_obj.original = datafile['content']
+                    if analysis_type == "decryption":
+                        f = open(datafile[algo + '_encrypted'], 'rb')
+                        text = f.read()
+                    else:
+                        text = datafile['content']
+
+                    algo_obj.text = text
+                    algo_obj.original = text
                     algo_obj.make_valid_text()
 
                     key = algo+"_time"
@@ -181,9 +187,9 @@ class Analyzer():
                         datafile[key] = self.calc_enc_time(algo_obj)
 
                         # save encrypted file for later decryption
-                        file_instance = utils.save_encrypted_file(datafile['name'],
-                                                                  algo_obj.ciph)
-                        datafile['file_path'] = file_instance.file_data.path
+                        filename = utils.save_encrypted_file(algo, datafile['name'],
+                                                             algo_obj.ciph)
+                        datafile[algo+'_encrypted'] = filename
 
                     elif analysis_type == "decryption":
                         datafile[key] = self.calc_dec_time(algo_obj)

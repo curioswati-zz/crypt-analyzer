@@ -1,3 +1,5 @@
+import os
+
 from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, render_to_response
@@ -36,11 +38,15 @@ def SelectAlgorithm(request, analysis_type, varying):
 
 
 def VaryFileSize(request):
+    # to show decrypt button initially
+    request.session['show_decrypt'] = True
+
     if request.method == "GET":
         form = UploadFileForm()
         analysis_type = request.session['analysis_type']
         algorithms = request.session['algorithms']
 
+        # fix minimum keylength to allow
         if 'rc6' in algorithms:
             keylen = 16
         elif 'des' in algorithms:
@@ -58,6 +64,7 @@ def VaryFileSize(request):
 
     else:
         key = request.POST['key']
+        request.session['key'] = key
         form = UploadFileForm(request.POST, request.FILES)
 
         if form.is_valid():
@@ -82,11 +89,15 @@ def VaryFileSize(request):
 
 
 def VaryKeySize(request):
+    # to show decrypt button initially
+    request.session['show_decrypt'] = True
+
     if request.method == "GET":
         form = UploadFileForm()
         analysis_type = request.session['analysis_type']
         algorithms = request.session['algorithms']
 
+        # fix minimum keylength to allow
         if 'des' in algorithms:
             keylen = 24
         elif 'twofish' in algorithms or 'aes' in algorithms:
@@ -133,15 +144,17 @@ def VisualAnalysis(request):
     result = sorted(result, key=lambda x: x['size'])
 
     sysconfig = utils.get_system_config()
+    analysis_type = request.session['analysis_type'].capitalize()
 
     algorithms = request.session['algorithms']
 
     xdata = [x['size'] for x in result]
-    chartdata = {'x': xdata, 'name1': 'Encryption Time in sec'}
+    chartdata = {'x': xdata, 'name1': analysis_type + ' Time in sec'}
 
     for i, algo in enumerate(algorithms):
         chartdata['y%d' % int(i+1)] = [x[algo+'_time'] for x in result]
-        chartdata['name%d' % int(i+1)] = algo.capitalize() + " Encryption Time"
+        name = algo.capitalize() + " " + analysis_type + " Time"
+        chartdata['name%d' % int(i+1)] = name
 
     charttype = "lineChart"
     data = {
@@ -155,7 +168,31 @@ def VisualAnalysis(request):
             'tag_script_js': True
         },
         'result': result,
-        'sysconfig': sysconfig
+        'sysconfig': sysconfig,
+        'show_decrypt': request.session['show_decrypt']
     }
 
     return render_to_response('result.html', data)
+
+
+def Decrypt(request):
+    '''
+    decrypted encrypted files.
+    '''
+    request.session['show_decrypt'] = False
+    files_data = request.session['files_data']
+    algorithms = request.session['algorithms']
+    key = request.session['key']
+    analysis_type = "decryption"
+    request.session['analysis_type'] = analysis_type
+    analyzer_obj = analyzer.Analyzer()
+    result = analyzer_obj.analyze_varying_data(request.session['analysis_type'],
+                                               algorithms, key, files_data)
+
+    request.session['files_data'] = result
+
+    for file_data in files_data:
+        for algo in algorithms:
+            os.remove(file_data[algo + '_encrypted'])
+
+    return HttpResponseRedirect(reverse_lazy("base:visual_analysis"))

@@ -1,11 +1,8 @@
-import os
 import platform
 import subprocess
 
 from django.conf import settings
 from django.core.files import File
-
-from .. import models
 
 
 def get_system_config():
@@ -31,7 +28,8 @@ def get_system_config():
         if not type(ram_info) == str:
             ram_info = ram_info.decode()
 
-        ram_size = int(ram_info.split('\n')[0].split(':')[1].strip().split(' ')[0]) / 1024.0**2
+        ram_size = int(ram_info.split('\n')[0].split(':')[1].strip(
+        ).split(' ')[0]) / 1024.0**2
         sysconfig['ram'] = ram_size
 
         sysconfig['architecture'] = platform.architecture()[0]
@@ -39,21 +37,19 @@ def get_system_config():
         return sysconfig
 
 
-def save_encrypted_file(filename, content):
+def save_encrypted_file(algorithm, filename, content):
     '''
     saves the encrypted file to database.
     '''
 
-    filename = settings.MEDIA_ROOT + '/files/' + filename
+    filename = settings.MEDIA_ROOT + '/files/' + algorithm + "_" + filename
     with open(filename, 'wb+') as f:
         encrypted_file = File(f)
-        encrypted_file.write(content)
 
-        file_instance = models.EncryptedFile(name=filename,
-                                             file_data=encrypted_file)
-        file_instance.save()
+        if isinstance(content, list):
+            for item in content:
+                encrypted_file.write(item)
+        else:
+            encrypted_file.write(content)
 
-    # remove the original file(before database upload) from filesystem
-    os.remove(filename)
-
-    return file_instance
+    return filename
