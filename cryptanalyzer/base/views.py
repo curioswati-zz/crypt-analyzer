@@ -43,7 +43,6 @@ def VaryFileSize(request):
 
     if request.method == "GET":
         form = UploadFileForm()
-        analysis_type = request.session['analysis_type']
         algorithms = request.session['algorithms']
 
         # fix minimum keylength to allow
@@ -56,11 +55,9 @@ def VaryFileSize(request):
         else:
             keylen = 56
 
-        return render(request, "varying_file_size.html",
-                      {'form': form,
-                       'analysis_type': analysis_type,
-                       'keylen': keylen
-                       })
+        return render(request, "varying_file_size.html", {'form': form,
+                                                          'keylen': keylen
+                                                          })
 
     else:
         key = request.POST['key']
@@ -79,8 +76,7 @@ def VaryFileSize(request):
 
             algorithms = request.session['algorithms']
             analyzer_obj = analyzer.Analyzer()
-            files = analyzer_obj.analyze_varying_data(request.session['analysis_type'],
-                                                      algorithms, key, files_data)
+            files = analyzer_obj.encrypt_varying_data(algorithms, key, files_data)
 
             # to pass requied variables to next view
             request.session['files_data'] = files
@@ -94,7 +90,6 @@ def VaryKeySize(request):
 
     if request.method == "GET":
         form = UploadFileForm()
-        analysis_type = request.session['analysis_type']
         algorithms = request.session['algorithms']
 
         # fix minimum keylength to allow
@@ -105,14 +100,14 @@ def VaryKeySize(request):
         else:
             keylen = 56
 
-        return render(request, "varying_key_size.html",
-                      {'form': form,
-                       'analysis_type': analysis_type,
-                       'keylen': keylen
-                       })
+        return render(request, "varying_key_size.html", {'form': form,
+                                                         'keylen': keylen
+                                                         })
 
     else:
-        data = request.FILES['data'].read()
+        data_file = request.FILES['data']
+        data_file_name = data_file.name
+        data = data_file.read()
         form = UploadFileForm(request.POST, request.FILES)
 
         if form.is_valid():
@@ -127,8 +122,8 @@ def VaryKeySize(request):
 
             algorithms = request.session['algorithms']
             analyzer_obj = analyzer.Analyzer()
-            files = analyzer_obj.analyze_varying_key(request.session['analysis_type'],
-                                                     algorithms, data, key_files_data)
+            files = analyzer_obj.encrypt_varying_key(algorithms, data,
+                                                     key_files_data, data_file_name)
 
             # to pass requied variables to next view
             request.session['files_data'] = files
@@ -180,19 +175,20 @@ def Decrypt(request):
     decrypted encrypted files.
     '''
     request.session['show_decrypt'] = False
+
     files_data = request.session['files_data']
     algorithms = request.session['algorithms']
     key = request.session['key']
-    analysis_type = "decryption"
-    request.session['analysis_type'] = analysis_type
+
+    request.session['analysis_type'] = "decryption"
+
     analyzer_obj = analyzer.Analyzer()
-    result = analyzer_obj.analyze_varying_data(request.session['analysis_type'],
-                                               algorithms, key, files_data)
+
+    if request.session['varying'] == 'file_size':
+        result = analyzer_obj.decrypt_varying_data(algorithms, key, files_data)
+    elif request.session['varying'] == 'key_size':
+        result = analyzer_obj.decrypt_varying_key(algorithms, files_data)
 
     request.session['files_data'] = result
-
-    for file_data in files_data:
-        for algo in algorithms:
-            os.remove(file_data[algo + '_encrypted'])
 
     return HttpResponseRedirect(reverse_lazy("base:visual_analysis"))

@@ -1,3 +1,4 @@
+import os
 import time
 
 from Crypto.Cipher import AES
@@ -42,8 +43,8 @@ class BaseCipher():
         self.ciph = self.cipher_obj.encrypt(self.text)
 
     def decrypt(self):
-        to_return = self.cipher_obj.decrypt(self.ciph)[:len(self.text)]
-        return to_return
+        decrypted = self.cipher_obj.decrypt(self.ciph)[:len(self.original)]
+        self.text = decrypted.decode()
 
 
 class AESCipher(BaseCipher):
@@ -101,12 +102,14 @@ class TwofishCipher(BaseCipher):
         pass
 
     def encrypt(self):
-        parts = [self.text[i:i+16] for i in range(0, len(self.text), 16)]
-        self.ciph = []
+        parts = [self.text[i:i+16] for i in range(0, len(self.original), 16)]
+        ciph = []
 
         for part in parts:
-            ciph = self.cipher_obj.encrypt(part.encode())
-            self.ciph.append(ciph)
+            part_ciph = self.cipher_obj.encrypt(part.encode())
+            ciph.append(part_ciph)
+
+        self.ciph = ciph
 
     def decrypt(self):
         decrypted = []
@@ -115,7 +118,7 @@ class TwofishCipher(BaseCipher):
             decrypted_part = self.cipher_obj.decrypt(encrypted_part)
             decrypted.append(decrypted_part)
 
-        return ''.join(map(lambda x: x.decode(), decrypted))[:len(self.original)]
+        self.text = ''.join(map(lambda x: x.decode(), decrypted))[:len(self.original)]
 
 
 class RC6Cipher(BaseCipher):
@@ -135,12 +138,14 @@ class RC6Cipher(BaseCipher):
         self.key = self.key[:16]
 
     def encrypt(self):
-        parts = [self.text[i:i+16] for i in range(0, len(self.text), 16)]
-        self.ciph = []
+        parts = [self.text[i:i+16] for i in range(0, len(self.original), 16)]
+        ciph = []
 
         for part in parts:
-            ciph = self.cipher_obj.encrypt(part)
-            self.ciph.append(ciph.encode())
+            part_ciph = self.cipher_obj.encrypt(part)
+            ciph.append(part_ciph.encode())
+
+        self.ciph = ciph
 
     def decrypt(self):
         decrypted = []
@@ -149,83 +154,105 @@ class RC6Cipher(BaseCipher):
             decrypted_part = self.cipher_obj.decrypt(encrypted_part.decode())
             decrypted.append(decrypted_part)
 
-        return ''.join(decrypted)[:len(self.original)]
+        self.text = ''.join(decrypted)[:len(self.original)]
 
 
 class Analyzer():
 
     def __init__(self):
-        pass
+        self.algo_choices = {'aes': 'AESCipher',
+                             'des': 'DES3Cipher',
+                             'blowfish': 'BlowfishCipher',
+                             'twofish': 'TwofishCipher',
+                             'rc6': 'RC6Cipher'
+                             }
 
-    def analyze_varying_data(self, analysis_type, algorithms, key, files):
-        algo_choices = {'aes': 'AESCipher',
-                        'des': 'DES3Cipher',
-                        'blowfish': 'BlowfishCipher',
-                        'twofish': 'TwofishCipher',
-                        'rc6': 'RC6Cipher'
-                        }
-
+    def encrypt_varying_data(self, algorithms, key, files):
         # iterate over the selected algorithms by user
         for algo in algorithms:
-            if algo in algo_choices:
-                class_instance = eval(algo_choices[algo])
-                algo_obj = class_instance(key=key, text=None)
+            class_instance = eval(self.algo_choices[algo])
+            algo_obj = class_instance(key=key, text=None)
 
-                for datafile in files:
-                    if analysis_type == "decryption":
-                        f = open(datafile[algo + '_encrypted'], 'rb')
-                        text = f.read()
-                    else:
-                        text = datafile['content']
+            for datafile in files:
+                text = datafile['content']
+                algo_obj.text = text
+                algo_obj.original = text
 
-                    algo_obj.text = text
-                    algo_obj.original = text
-                    algo_obj.make_valid_text()
+                algo_obj.make_valid_text()
 
-                    key = algo+"_time"
-                    if analysis_type == "encryption":
-                        datafile[key] = self.calc_enc_time(algo_obj)
+                datafile[algo+"_time"] = self.calc_enc_time(algo_obj)
 
-                        # save encrypted file for later decryption
-                        filename = utils.save_encrypted_file(algo, datafile['name'],
-                                                             algo_obj.ciph)
-                        datafile[algo+'_encrypted'] = filename
-
-                    elif analysis_type == "decryption":
-                        datafile[key] = self.calc_dec_time(algo_obj)
+                # save encrypted file for later decryption
+                filename = utils.save_encrypted_file(algo, datafile['name'],
+                                                     algo_obj.ciph)
+                datafile[algo+'_encrypted'] = filename
 
         return files
 
-    def analyze_varying_key(self, analysis_type, algorithms, data, keys):
-        algo_choices = {'aes': 'AESCipher',
-                        'des': 'DES3Cipher',
-                        'blowfish': 'BlowfishCipher',
-                        'twofish': 'TwofishCipher',
-                        'rc6': 'RC6Cipher'
-                        }
+    def decrypt_varying_data(self, algorithms, key, files):
+        for algo in algorithms:
+            class_instance = eval(self.algo_choices[algo])
+            algo_obj = class_instance(key=key, text=None)
 
+            for datafile in files:
+                f = open(datafile[algo + "_encrypted"], 'rb')
+                text = f.read()
+                f.close()
+
+                algo_obj.ciph = text
+                algo_obj.make_valid_text()
+
+                text = datafile['content']
+                algo_obj.original = text
+
+                datafile[algo+"_time"] = self.calc_dec_time(algo_obj)
+
+                os.remove(datafile[algo + "_encrypted"])
+
+        return files
+
+
+    def encrypt_varying_key(self, algorithms, data, keys, data_file_name):
         # iterate over the selected algorithms by user
         for algo in algorithms:
-            if algo in algo_choices:
-                class_instance = eval(algo_choices[algo])
+            class_instance = eval(self.algo_choices[algo])
 
-                for keyfile in keys:
-                    stripped_key = keyfile['content'][2:-1]
-                    algo_obj = class_instance(key=stripped_key, text=data)
-                    algo_obj.make_valid_text()
+            for keyfile in keys:
+                stripped_key = keyfile['content'][2:-1]
+                algo_obj = class_instance(key=stripped_key, text=data)
 
-                    key = algo+"_time"
-                    if analysis_type == "encryption":
-                        keyfile[key] = self.calc_enc_time(algo_obj)
+                algo_obj.make_valid_text()
 
-                        # save encrypted file for later decryption
-                        file_instance = utils.save_encrypted_file(keyfile['name'],
-                                                                  algo_obj.ciph)
+                keyfile[algo+"_time"] = self.calc_enc_time(algo_obj)
 
-                        keyfile['file_path'] = file_instance.file_data.path
+                # save encrypted file for later decryption
+                name = data_file_name + "_" + keyfile['name']
+                filename = utils.save_encrypted_file(algo, name, algo_obj.ciph)
+                keyfile[algo+'_encrypted'] = filename
 
-                    elif analysis_type == "decryption":
-                        keyfile[key] = self.calc_dec_time(algo_obj)
+        return keys
+
+    def decrypt_varying_key(self, algorithms, keys):
+        # iterate over the selected algorithms by user
+        for algo in algorithms:
+            class_instance = eval(self.algo_choices[algo])
+
+            for keyfile in keys:
+                stripped_key = keyfile['content'][2:-1]
+
+                f = open(keyfile[algo + '_encrypted'], 'rb')
+                data = f.read()
+                f.close()
+
+                algo_obj = class_instance(key=stripped_key, text=None)
+                algo_obj.ciph = data
+                algo_obj.original = data
+
+                algo_obj.make_valid_text()
+
+                keyfile[algo+"_time"] = self.calc_dec_time(algo_obj)
+
+                os.remove(keyfile[algo + "_encrypted"])
 
         return keys
 
@@ -240,8 +267,6 @@ class Analyzer():
         return sum(taken_times) / float(len(taken_times))
 
     def calc_dec_time(self, algo_obj):
-        algo_obj.encrypt()
-
         taken_times = []
         for i in range(5):
             start = time.clock()
