@@ -44,7 +44,16 @@ class BaseCipher():
         self.ciph = self.cipher_obj.encrypt(self.text)
 
     def decrypt(self):
-        decrypted = self.cipher_obj.decrypt(self.ciph)[:len(self.original)]
+        if not self.original:
+            trim_len = None
+        else:
+            trim_len = len(self.original)
+
+        if trim_len:
+            decrypted = self.cipher_obj.decrypt(self.ciph)[:trim_len]
+        else:
+            decrypted = self.cipher_obj.decrypt(self.ciph)
+
         self.text = decrypted.decode()
 
 
@@ -113,13 +122,23 @@ class TwofishCipher(BaseCipher):
         self.ciph = ciph
 
     def decrypt(self):
+        if not self.original:
+            trim_len = None
+        else:
+            trim_len = len(self.original)
+
         decrypted = []
 
         for encrypted_part in self.ciph:
             decrypted_part = self.cipher_obj.decrypt(encrypted_part)
             decrypted.append(decrypted_part)
 
-        self.text = ''.join(map(lambda x: x.decode(), decrypted))[:len(self.original)]
+        # if encrypted with varying key length then we don't have original content to trim
+        # the output to so take complete content as output.
+        if trim_len:
+            self.text = ''.join(map(lambda x: x.decode(), decrypted))[:trim_len]
+        else:
+            self.text = ''.join(map(lambda x: x.decode(), decrypted))
 
 
 class RC6Cipher(BaseCipher):
@@ -149,13 +168,23 @@ class RC6Cipher(BaseCipher):
         self.ciph = ciph
 
     def decrypt(self):
+        if not self.original:
+            trim_len = None
+        else:
+            trim_len = len(self.original)
+
         decrypted = []
 
         for encrypted_part in self.ciph:
             decrypted_part = self.cipher_obj.decrypt(encrypted_part.decode())
             decrypted.append(decrypted_part)
 
-        self.text = ''.join(decrypted)[:len(self.original)]
+        # if encrypted with varying key length then we don't have original content to trim
+        # the output to so take complete content as output.
+        if trim_len:
+            self.text = ''.join(decrypted)[:trim_len]
+        else:
+            self.text = ''.join(decrypted)
 
 
 class Analyzer():
@@ -245,12 +274,16 @@ class Analyzer():
                 stripped_key = keyfile['content'][2:-1]
 
                 f = open(keyfile[algo + '_encrypted'], 'rb')
-                data = f.read()
-                f.close()
+
+                if algo in ['twofish', 'rc6']:
+                    data = pickle.load(f)
+                else:
+                    data = f.read()
+                    f.close()
 
                 algo_obj = class_instance(key=stripped_key, text=None)
                 algo_obj.ciph = data
-                algo_obj.original = data
+                algo_obj.original = None
 
                 algo_obj.make_valid_text()
 
