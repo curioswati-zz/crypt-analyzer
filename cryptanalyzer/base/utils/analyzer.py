@@ -1,4 +1,5 @@
 import os
+import pickle
 import time
 
 from Crypto.Cipher import AES
@@ -196,8 +197,12 @@ class Analyzer():
 
             for datafile in files:
                 f = open(datafile[algo + "_encrypted"], 'rb')
-                text = f.read()
-                f.close()
+
+                if algo in ['twofish', 'rc6']:
+                    text = pickle.load(f)
+                else:
+                    text = f.read()
+                    f.close()
 
                 algo_obj.ciph = text
                 algo_obj.make_valid_text()
@@ -210,7 +215,6 @@ class Analyzer():
                 os.remove(datafile[algo + "_encrypted"])
 
         return files
-
 
     def encrypt_varying_key(self, algorithms, data, keys, data_file_name):
         # iterate over the selected algorithms by user

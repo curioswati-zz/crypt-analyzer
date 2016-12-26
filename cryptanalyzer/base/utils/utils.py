@@ -1,3 +1,4 @@
+import pickle
 import platform
 import subprocess
 
@@ -47,8 +48,7 @@ def save_encrypted_file(algorithm, filename, content):
         encrypted_file = File(f)
 
         if isinstance(content, list):
-            for item in content:
-                encrypted_file.write(item)
+            pickle.dump(content, encrypted_file)
         else:
             encrypted_file.write(content)
 
