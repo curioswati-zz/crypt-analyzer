@@ -31,6 +31,7 @@
         <h3>System Configuration</h3>
       </div>
     </div>
+
     <div class="row" style="font-weight: bold;">
       <div class="col-md-3">
         Processor Architecture
@@ -66,54 +67,60 @@
     <div class="row">
       <h3>Analysis Result</h3>
         <div id="encryption-container" class="col-md-6">
-          {% if show_decrypt %}
-          <a id="decrypt" class="btn btn-info pull-right" href="{% url 'base:decrypt' %}">Decrypt</a>
-          {% endif %}
-          <div class="btn btn-info pull-right" onclick="saveChart();">Export Chart as PNG</div>
+
+          <div class="row">
+            <div class="col-md-4 btn btn-info pull-right" onclick="saveChart();">
+                Export Chart as PNG
+            </div>
+            {% if show_decrypt %}
+            <div class="col-md-8">
+              <a id="decrypt" class="btn btn-warning pull-right" href="{% url 'base:decrypt' %}">Decrypt</a>
+            </div>
+            {% endif %}
+          </div>
+
           {% include_container "linechart_container" 350 600 %}
         </div>
         <!--div id="decryption-container" class="col-md-6">
           <div class="row btn btn-info pull-right" onclick="saveChart();">Export Chart as PNG</div>
           {# % include_container "linechart_container1" 350 600 % #}
         </div-->
-      </div>
     </div>
 
     <hr width="100%">
 
     <div class="row">
 
-      <div class="col-md-6">
-        <h3>Input Details</h3>
-        <div class="row res-table table-header">
-          <div class="col-md-2">
-              S.No.
-          </div>
-          <div class="col-md-4">
-              File Name
-          </div>
-          <div class="col-md-5">
-              File Size
-          </div>
+        <div class="col-md-6">
+          <table class="res-table">
+            <tr>
+              <th>Files</th>
+              {% for algo in data.algorithms %}
+                <th>{{ algo.0 }}</th>
+              {% endfor %}
+              <th>Size</th>
+            </tr>
+            {% for file in data.files %}
+            <tr>
+                <td>{{ file.name }}</td>
+                {% for algo in data.algorithms %}
+                {% with algo_time=algo.0|add:'_time' %}
+                  <td>{{ file|get_item:algo_time }}</td>
+                {% endwith %}
+                {% endfor %}
+                <td>{{ file.size }}k </td>
+            </tr>
+            {% endfor %}
+            <tr>
+              <th>Throughput</th>
+              {% for algo in data.algorithms %}
+                <td>{{ algo.1|floatformat:2 }} kb/s</td>
+              {% endfor %}
+              <td></td>
+            </tr>
+          </table>
         </div>
 
-        {% for file in result %}
-        <div class="row res-table">
-          <div class="col-md-2">
-              {{ forloop.counter }}
-          </div>
-
-          <div class="col-md-4">
-              {{ file.name }}
-          </div>
-
-          <div class="col-md-5">
-              {{ file.size }} kb
-          </div>
-
-        </div>
-      {% endfor %}
-      </div>
     </div>
 
 {% endblock %}

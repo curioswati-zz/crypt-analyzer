@@ -35,7 +35,13 @@
     border-radius: 5px;
 }
 .res-table {
-    margin-left: 1%;
+    margin-left: 10%;
+    padding: 5px;
+    border: 1px solid black;
+}
+.res-table th, .res-table td {
+    padding: 5px 7px;
+    border: 1px solid black;
 }
 .res-table > div {
     margin: 5px;

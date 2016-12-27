@@ -77,7 +77,7 @@ def VaryFileSize(request):
             files = analyzer_obj.encrypt_varying_data(algorithms, key, files_data)
 
             # to pass requied variables to next view
-            request.session['files_data'] = files
+            request.session['data'] = {'files': files, 'algorithms': algorithms}
 
         return HttpResponseRedirect(reverse_lazy("base:visual_analysis"))
 
@@ -124,7 +124,7 @@ def VaryKeySize(request):
                                                      key_files_data, data_file_name)
 
             # to pass requied variables to next view
-            request.session['files_data'] = files
+            request.session['data'] = {'files': files, 'algorithms': algorithms}
 
         return HttpResponseRedirect(reverse_lazy("base:visual_analysis"))
 
@@ -133,8 +133,8 @@ def VisualAnalysis(request):
     """
     result page
     """
-    result = request.session['files_data']
-    result = sorted(result, key=lambda x: x['size'])
+    data = request.session['data']
+    result = sorted(data['files'], key=lambda x: x['size'])
 
     sysconfig = utils.get_system_config()
     analysis_type = request.session['analysis_type'].capitalize()
@@ -149,8 +149,11 @@ def VisualAnalysis(request):
         name = algo.capitalize() + " " + analysis_type + " Time"
         chartdata['name%d' % int(i+1)] = name
 
+        throughput = sum(x['size'] for x in result) / sum(x[algo+'_time'] for x in result)
+        data['algorithms'][i] = [algo, throughput]
+
     charttype = "lineChart"
-    data = {
+    response_data = {
         'charttype': charttype,
         'chartdata': chartdata,
         'chartcontainer': 'linechart_container',
@@ -160,12 +163,12 @@ def VisualAnalysis(request):
             'y_axis_format': ".06f",
             'tag_script_js': True
         },
-        'result': result,
+        'data': data,
         'sysconfig': sysconfig,
         'show_decrypt': request.session['show_decrypt']
     }
 
-    return render_to_response('result.html', data)
+    return render_to_response('result.html', response_data)
 
 
 def Decrypt(request):
@@ -174,7 +177,7 @@ def Decrypt(request):
     '''
     request.session['show_decrypt'] = False
 
-    files_data = request.session['files_data']
+    files_data = request.session['data']['files']
     algorithms = request.session['algorithms']
     key = request.session['key']
 
@@ -183,10 +186,10 @@ def Decrypt(request):
     analyzer_obj = analyzer.Analyzer()
 
     if request.session['varying'] == 'file_size':
-        result = analyzer_obj.decrypt_varying_data(algorithms, key, files_data)
+        files_data = analyzer_obj.decrypt_varying_data(algorithms, key, files_data)
     elif request.session['varying'] == 'key_size':
-        result = analyzer_obj.decrypt_varying_key(algorithms, files_data)
+        files_data = analyzer_obj.decrypt_varying_key(algorithms, files_data)
 
-    request.session['files_data'] = result
+    request.session['data'] = {'files': files_data, 'algorithms': algorithms}
 
     return HttpResponseRedirect(reverse_lazy("base:visual_analysis"))
